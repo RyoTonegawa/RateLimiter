@@ -108,10 +108,16 @@ func TestLeakingBucketCanFillQueueAndRejectUntilLeakCatchesUp(t *testing.T) {
 	if limiter.Allow("client") {
 		t.Fatal("full leaking bucket should reject new arrivals")
 	}
+	if got := len(limiter.buckets["client"].queue); got != 3 {
+		t.Fatalf("queue should contain admitted requests: got %d", got)
+	}
 
 	now = now.Add(time.Second)
 	if !limiter.Allow("client") {
 		t.Fatal("one request should be admitted after one leak interval")
+	}
+	if got := len(limiter.buckets["client"].queue); got != 3 {
+		t.Fatalf("one old request should drain before a new one is enqueued: got %d", got)
 	}
 }
 
