@@ -1,0 +1,111 @@
+basePath: /
+definitions:
+  api.Response:
+    properties:
+      algorithm:
+        example: token_bucket
+        type: string
+      allowed:
+        example: true
+        type: boolean
+      message:
+        example: request accepted
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    Five classic rate limiter implementations exposed as separate Gin endpoints.
+    Interview focus: understand burst behavior, memory growth, boundary problems, and distributed-system tradeoffs for each algorithm.
+  title: Rate Limiter Study API
+  version: "1.0"
+paths:
+  /fixed-window-counter:
+    get:
+      description: Counts requests in fixed windows; simple but vulnerable to boundary
+        bursts.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Fixed Window Counter protected endpoint
+      tags:
+      - rate-limiters
+  /leaking-bucket:
+    get:
+      description: Smooths traffic by draining queued requests at a fixed rate.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Leaking Bucket protected endpoint
+      tags:
+      - rate-limiters
+  /sliding-window-counter:
+    get:
+      description: Approximates a rolling-window limit by weighting the previous fixed
+        window.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Sliding Window Counter protected endpoint
+      tags:
+      - rate-limiters
+  /sliding-window-log:
+    get:
+      description: Stores request timestamps for an exact rolling-window limit.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Sliding Window Log protected endpoint
+      tags:
+      - rate-limiters
+  /token-bucket:
+    get:
+      description: Allows short bursts up to bucket capacity, then refills steadily
+        over time.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Token Bucket protected endpoint
+      tags:
+      - rate-limiters
+swagger: "2.0"

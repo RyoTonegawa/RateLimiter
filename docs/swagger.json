@@ -1,0 +1,161 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Five classic rate limiter implementations exposed as separate Gin endpoints.\nInterview focus: understand burst behavior, memory growth, boundary problems, and distributed-system tradeoffs for each algorithm.",
+        "title": "Rate Limiter Study API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/fixed-window-counter": {
+            "get": {
+                "description": "Counts requests in fixed windows; simple but vulnerable to boundary bursts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rate-limiters"
+                ],
+                "summary": "Fixed Window Counter protected endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/leaking-bucket": {
+            "get": {
+                "description": "Smooths traffic by draining queued requests at a fixed rate.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rate-limiters"
+                ],
+                "summary": "Leaking Bucket protected endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sliding-window-counter": {
+            "get": {
+                "description": "Approximates a rolling-window limit by weighting the previous fixed window.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rate-limiters"
+                ],
+                "summary": "Sliding Window Counter protected endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/sliding-window-log": {
+            "get": {
+                "description": "Stores request timestamps for an exact rolling-window limit.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rate-limiters"
+                ],
+                "summary": "Sliding Window Log protected endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/token-bucket": {
+            "get": {
+                "description": "Allows short bursts up to bucket capacity, then refills steadily over time.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rate-limiters"
+                ],
+                "summary": "Token Bucket protected endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.Response": {
+            "type": "object",
+            "properties": {
+                "algorithm": {
+                    "type": "string",
+                    "example": "token_bucket"
+                },
+                "allowed": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "message": {
+                    "type": "string",
+                    "example": "request accepted"
+                }
+            }
+        }
+    }
+}
