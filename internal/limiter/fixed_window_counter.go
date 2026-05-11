@@ -15,6 +15,7 @@ type FixedWindowCounterLimiter struct {
 	limit    int
 	window   time.Duration
 	counters map[string]*fixedWindowState
+	now      func() time.Time
 }
 
 func NewFixedWindowCounterLimiter(limit int, window time.Duration) *FixedWindowCounterLimiter {
@@ -22,6 +23,7 @@ func NewFixedWindowCounterLimiter(limit int, window time.Duration) *FixedWindowC
 		limit:    limit,
 		window:   window,
 		counters: make(map[string]*fixedWindowState),
+		now:      time.Now,
 	}
 }
 
@@ -29,7 +31,7 @@ func (l *FixedWindowCounterLimiter) Allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	now := time.Now()
+	now := l.now()
 	state, ok := l.counters[key]
 	if !ok || now.Sub(state.windowStart) >= l.window {
 		state = &fixedWindowState{

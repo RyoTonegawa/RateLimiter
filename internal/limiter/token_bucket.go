@@ -15,6 +15,7 @@ type TokenBucketLimiter struct {
 	capacity   float64
 	refillRate float64
 	buckets    map[string]*tokenBucketState
+	now        func() time.Time
 }
 
 func NewTokenBucketLimiter(capacity int, refillPerSecond float64) *TokenBucketLimiter {
@@ -22,6 +23,7 @@ func NewTokenBucketLimiter(capacity int, refillPerSecond float64) *TokenBucketLi
 		capacity:   float64(capacity),
 		refillRate: refillPerSecond,
 		buckets:    make(map[string]*tokenBucketState),
+		now:        time.Now,
 	}
 }
 
@@ -29,7 +31,7 @@ func (l *TokenBucketLimiter) Allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	now := time.Now()
+	now := l.now()
 	state, ok := l.buckets[key]
 	if !ok {
 		state = &tokenBucketState{

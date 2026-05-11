@@ -16,6 +16,7 @@ type SlidingWindowCounterLimiter struct {
 	limit    int
 	window   time.Duration
 	counters map[string]*slidingCounterState
+	now      func() time.Time
 }
 
 func NewSlidingWindowCounterLimiter(limit int, window time.Duration) *SlidingWindowCounterLimiter {
@@ -23,6 +24,7 @@ func NewSlidingWindowCounterLimiter(limit int, window time.Duration) *SlidingWin
 		limit:    limit,
 		window:   window,
 		counters: make(map[string]*slidingCounterState),
+		now:      time.Now,
 	}
 }
 
@@ -30,7 +32,7 @@ func (l *SlidingWindowCounterLimiter) Allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	now := time.Now()
+	now := l.now()
 	windowStart := now.Truncate(l.window)
 	state, ok := l.counters[key]
 	if !ok {

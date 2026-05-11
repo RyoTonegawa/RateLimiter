@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Five classic rate limiter implementations exposed as separate Gin endpoints.\nInterview focus: understand burst behavior, memory growth, boundary problems, and distributed-system tradeoffs for each algorithm.",
-        "title": "Rate Limiter Study API",
+        "description": "5種類の代表的なレートリミッターを、それぞれ別のGinエンドポイントとして公開する学習用APIです。\nシステムデザイン面接では、バースト耐性、メモリ使用量、境界時刻の問題、分散環境での一貫性を比較して説明できることが重要です。",
+        "title": "レートリミッター学習API",
         "contact": {},
         "version": "1.0"
     },
@@ -10,14 +10,14 @@
     "paths": {
         "/fixed-window-counter": {
             "get": {
-                "description": "Counts requests in fixed windows; simple but vulnerable to boundary bursts.",
+                "description": "固定長の時間窓ごとにリクエスト数をカウントします。\nPros: 実装が非常にシンプルで、キーごとにカウンターを1つ持てばよいため低コストです。Redis INCR + TTLでも実装しやすいです。\nCons: 窓の終端と次の窓の開始直後に連続で送ると、短時間で最大2窓分のリクエストを許してしまいます。境界バーストが代表的な弱点です。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "rate-limiters"
                 ],
-                "summary": "Fixed Window Counter protected endpoint",
+                "summary": "Fixed Window Counter方式のレートリミット",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -36,14 +36,14 @@
         },
         "/leaking-bucket": {
             "get": {
-                "description": "Smooths traffic by draining queued requests at a fixed rate.",
+                "description": "バケットをキューのように扱い、一定速度で漏れ出す前提でリクエストを受け付けます。\nPros: 下流への流量を平滑化しやすく、急なスパイクを一定速度に近づけられます。\nCons: キューが大きいと遅延を隠してしまい、小さいとすぐ拒否します。このサンプルは受付判定のみで、実運用では非同期ワーカーやバックプレッシャー設計も論点になります。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "rate-limiters"
                 ],
-                "summary": "Leaking Bucket protected endpoint",
+                "summary": "Leaking Bucket方式のレートリミット",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -62,14 +62,14 @@
         },
         "/sliding-window-counter": {
             "get": {
-                "description": "Approximates a rolling-window limit by weighting the previous fixed window.",
+                "description": "現在の固定窓カウントと、前の固定窓カウントに時間割合の重みを掛けた値で、ローリングウィンドウを近似します。\nPros: Sliding Window Logよりメモリ効率が良く、キーごとに現在窓と前窓のカウンターだけで済みます。Fixed Windowより境界バーストを抑えやすいです。\nCons: あくまで近似のため、前窓のリクエスト分布によっては正確なLog方式より厳しく拒否したり、逆に緩く許可したりする可能性があります。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "rate-limiters"
                 ],
-                "summary": "Sliding Window Counter protected endpoint",
+                "summary": "Sliding Window Counter方式のレートリミット",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -88,14 +88,14 @@
         },
         "/sliding-window-log": {
             "get": {
-                "description": "Stores request timestamps for an exact rolling-window limit.",
+                "description": "リクエスト時刻をログとして保持し、現在時刻から見た直近ウィンドウ内の件数を正確に数えます。\nPros: 固定窓の境界問題を避けられ、ローリングウィンドウとして最も正確に制限できます。\nCons: 許可したリクエストのタイムスタンプを保持するため、トラフィック量やキー数が多いとメモリ使用量が増えます。分散環境ではRedis Sorted Setなどでtrim/count/addを原子的に扱う必要があります。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "rate-limiters"
                 ],
-                "summary": "Sliding Window Log protected endpoint",
+                "summary": "Sliding Window Log方式のレートリミット",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -114,14 +114,14 @@
         },
         "/token-bucket": {
             "get": {
-                "description": "Allows short bursts up to bucket capacity, then refills steadily over time.",
+                "description": "トークンを一定速度で補充し、リクエストごとに1トークンを消費します。\nPros: 平均レートを守りながら、バケット容量までの瞬間的なバーストを許可できます。API Gatewayやユーザー単位の制限でよく使われます。\nCons: 容量分のバーストは下流サービスにそのまま流れるため、瞬間負荷に弱い下流では注意が必要です。分散環境ではトークン数と最終補充時刻を原子的に更新する必要があります。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "rate-limiters"
                 ],
-                "summary": "Token Bucket protected endpoint",
+                "summary": "Token Bucket方式のレートリミット",
                 "responses": {
                     "200": {
                         "description": "OK",

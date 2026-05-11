@@ -39,3 +39,25 @@ http://localhost:8080/swagger/index.html
 ```bash
 go test ./...
 ```
+
+## Weakness Demo
+
+各アルゴリズムが苦手とするケースを短い時間窓で再現します。
+
+```bash
+go run ./cmd/weakness-demo
+```
+
+または:
+
+```bash
+bash scripts/weakness_demo.sh
+```
+
+確認できるポイント:
+
+- Token Bucket: 容量分の瞬間バーストを許す
+- Leaking Bucket: キュー満杯後は漏れ出すまで拒否する
+- Fixed Window Counter: 窓境界の前後で短時間に2窓分を許す
+- Sliding Window Log: 正確だがリクエスト時刻を保存するためメモリを使う
+- Sliding Window Counter: 省メモリだが近似により厳しめに拒否することがある

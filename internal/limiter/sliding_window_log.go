@@ -10,6 +10,7 @@ type SlidingWindowLogLimiter struct {
 	limit    int
 	window   time.Duration
 	requests map[string][]time.Time
+	now      func() time.Time
 }
 
 func NewSlidingWindowLogLimiter(limit int, window time.Duration) *SlidingWindowLogLimiter {
@@ -17,6 +18,7 @@ func NewSlidingWindowLogLimiter(limit int, window time.Duration) *SlidingWindowL
 		limit:    limit,
 		window:   window,
 		requests: make(map[string][]time.Time),
+		now:      time.Now,
 	}
 }
 
@@ -24,7 +26,7 @@ func (l *SlidingWindowLogLimiter) Allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	now := time.Now()
+	now := l.now()
 	cutoff := now.Add(-l.window)
 	timestamps := l.requests[key]
 

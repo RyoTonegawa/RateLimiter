@@ -15,6 +15,7 @@ type LeakingBucketLimiter struct {
 	capacity     int
 	leakInterval time.Duration
 	buckets      map[string]*leakingBucketState
+	now          func() time.Time
 }
 
 func NewLeakingBucketLimiter(capacity int, leakInterval time.Duration) *LeakingBucketLimiter {
@@ -22,6 +23,7 @@ func NewLeakingBucketLimiter(capacity int, leakInterval time.Duration) *LeakingB
 		capacity:     capacity,
 		leakInterval: leakInterval,
 		buckets:      make(map[string]*leakingBucketState),
+		now:          time.Now,
 	}
 }
 
@@ -29,7 +31,7 @@ func (l *LeakingBucketLimiter) Allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	now := time.Now()
+	now := l.now()
 	state, ok := l.buckets[key]
 	if !ok {
 		state = &leakingBucketState{lastLeak: now}

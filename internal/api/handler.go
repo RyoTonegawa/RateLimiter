@@ -30,8 +30,10 @@ func NewHandler(limiters RateLimiters) *Handler {
 }
 
 // TokenBucket godoc
-// @Summary Token Bucket protected endpoint
-// @Description Allows short bursts up to bucket capacity, then refills steadily over time.
+// @Summary Token Bucket方式のレートリミット
+// @Description トークンを一定速度で補充し、リクエストごとに1トークンを消費します。
+// @Description Pros: 平均レートを守りながら、バケット容量までの瞬間的なバーストを許可できます。API Gatewayやユーザー単位の制限でよく使われます。
+// @Description Cons: 容量分のバーストは下流サービスにそのまま流れるため、瞬間負荷に弱い下流では注意が必要です。分散環境ではトークン数と最終補充時刻を原子的に更新する必要があります。
 // @Tags rate-limiters
 // @Produce json
 // @Success 200 {object} Response
@@ -42,8 +44,10 @@ func (h *Handler) TokenBucket(c *gin.Context) {
 }
 
 // LeakingBucket godoc
-// @Summary Leaking Bucket protected endpoint
-// @Description Smooths traffic by draining queued requests at a fixed rate.
+// @Summary Leaking Bucket方式のレートリミット
+// @Description バケットをキューのように扱い、一定速度で漏れ出す前提でリクエストを受け付けます。
+// @Description Pros: 下流への流量を平滑化しやすく、急なスパイクを一定速度に近づけられます。
+// @Description Cons: キューが大きいと遅延を隠してしまい、小さいとすぐ拒否します。このサンプルは受付判定のみで、実運用では非同期ワーカーやバックプレッシャー設計も論点になります。
 // @Tags rate-limiters
 // @Produce json
 // @Success 200 {object} Response
@@ -54,8 +58,10 @@ func (h *Handler) LeakingBucket(c *gin.Context) {
 }
 
 // FixedWindowCounter godoc
-// @Summary Fixed Window Counter protected endpoint
-// @Description Counts requests in fixed windows; simple but vulnerable to boundary bursts.
+// @Summary Fixed Window Counter方式のレートリミット
+// @Description 固定長の時間窓ごとにリクエスト数をカウントします。
+// @Description Pros: 実装が非常にシンプルで、キーごとにカウンターを1つ持てばよいため低コストです。Redis INCR + TTLでも実装しやすいです。
+// @Description Cons: 窓の終端と次の窓の開始直後に連続で送ると、短時間で最大2窓分のリクエストを許してしまいます。境界バーストが代表的な弱点です。
 // @Tags rate-limiters
 // @Produce json
 // @Success 200 {object} Response
@@ -66,8 +72,10 @@ func (h *Handler) FixedWindowCounter(c *gin.Context) {
 }
 
 // SlidingWindowLog godoc
-// @Summary Sliding Window Log protected endpoint
-// @Description Stores request timestamps for an exact rolling-window limit.
+// @Summary Sliding Window Log方式のレートリミット
+// @Description リクエスト時刻をログとして保持し、現在時刻から見た直近ウィンドウ内の件数を正確に数えます。
+// @Description Pros: 固定窓の境界問題を避けられ、ローリングウィンドウとして最も正確に制限できます。
+// @Description Cons: 許可したリクエストのタイムスタンプを保持するため、トラフィック量やキー数が多いとメモリ使用量が増えます。分散環境ではRedis Sorted Setなどでtrim/count/addを原子的に扱う必要があります。
 // @Tags rate-limiters
 // @Produce json
 // @Success 200 {object} Response
@@ -78,8 +86,10 @@ func (h *Handler) SlidingWindowLog(c *gin.Context) {
 }
 
 // SlidingWindowCounter godoc
-// @Summary Sliding Window Counter protected endpoint
-// @Description Approximates a rolling-window limit by weighting the previous fixed window.
+// @Summary Sliding Window Counter方式のレートリミット
+// @Description 現在の固定窓カウントと、前の固定窓カウントに時間割合の重みを掛けた値で、ローリングウィンドウを近似します。
+// @Description Pros: Sliding Window Logよりメモリ効率が良く、キーごとに現在窓と前窓のカウンターだけで済みます。Fixed Windowより境界バーストを抑えやすいです。
+// @Description Cons: あくまで近似のため、前窓のリクエスト分布によっては正確なLog方式より厳しく拒否したり、逆に緩く許可したりする可能性があります。
 // @Tags rate-limiters
 // @Produce json
 // @Success 200 {object} Response
