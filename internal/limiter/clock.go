@@ -9,9 +9,7 @@ func NewTokenBucketLimiterWithClock(capacity int, refillPerSecond float64, now f
 }
 
 func NewLeakingBucketLimiterWithClock(capacity int, leakInterval time.Duration, now func() time.Time) *LeakingBucketLimiter {
-	limiter := NewLeakingBucketLimiter(capacity, leakInterval)
-	limiter.now = now
-	return limiter
+	return newLeakingBucketLimiter(capacity, leakInterval, now)
 }
 
 func NewFixedWindowCounterLimiterWithClock(limit int, window time.Duration, now func() time.Time) *FixedWindowCounterLimiter {

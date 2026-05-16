@@ -28,11 +28,11 @@ func main() {
 			name:  "Leaking Bucket",
 			point: "キュー容量までは受けるが、満杯になると漏れ出すまで拒否する。大きなキューは遅延を隠す。",
 			run: func() []string {
-				now := time.Date(2026, 5, 11, 9, 0, 0, 0, time.UTC)
-				l := limiter.NewLeakingBucketLimiterWithClock(3, time.Second, func() time.Time { return now })
+				l := limiter.NewLeakingBucketLimiter(3, 100*time.Millisecond)
+				defer l.Close()
 				results := burst(l, "client", 4)
-				now = now.Add(time.Second)
-				results = append(results, "after 1s leak: "+result(l.Allow("client")))
+				time.Sleep(120 * time.Millisecond)
+				results = append(results, "after worker drain: "+result(l.Allow("client")))
 				return results
 			},
 		},

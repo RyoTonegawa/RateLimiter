@@ -47,7 +47,7 @@ func (h *Handler) TokenBucket(c *gin.Context) {
 // @Summary Leaking Bucket方式のレートリミット
 // @Description バケットをキューのように扱い、一定速度で漏れ出す前提でリクエストを受け付けます。
 // @Description Pros: 下流への流量を平滑化しやすく、急なスパイクを一定速度に近づけられます。
-// @Description Cons: キューが大きいと遅延を隠してしまい、小さいとすぐ拒否します。このサンプルは受付判定のみで、実運用では非同期ワーカーやバックプレッシャー設計も論点になります。
+// @Description Cons: キューが大きいと遅延を隠してしまい、小さいとすぐ拒否します。このサンプルでは内部workerが固定間隔でキューをdrainしますが、実運用では永続化Queue、retry、timeout、バックプレッシャー設計も論点になります。
 // @Tags rate-limiters
 // @Produce json
 // @Success 200 {object} Response

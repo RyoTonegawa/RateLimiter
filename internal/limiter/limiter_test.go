@@ -21,6 +21,7 @@ func TestTokenBucketLimiterRejectsWhenBucketIsEmpty(t *testing.T) {
 
 func TestLeakingBucketLimiterRejectsWhenBucketIsFull(t *testing.T) {
 	limiter := NewLeakingBucketLimiter(2, time.Hour)
+	t.Cleanup(limiter.Close)
 
 	if !limiter.Allow("client") {
 		t.Fatal("first request should be allowed")
@@ -96,9 +97,8 @@ func TestTokenBucketAllowsInstantBurstUpToCapacity(t *testing.T) {
 }
 
 func TestLeakingBucketCanFillQueueAndRejectUntilLeakCatchesUp(t *testing.T) {
-	limiter := NewLeakingBucketLimiter(3, time.Second)
 	now := time.Date(2026, 5, 11, 9, 0, 0, 0, time.UTC)
-	limiter.now = func() time.Time { return now }
+	limiter := NewLeakingBucketLimiterWithClock(3, time.Second, func() time.Time { return now })
 
 	for range 3 {
 		if !limiter.Allow("client") {
@@ -113,12 +113,35 @@ func TestLeakingBucketCanFillQueueAndRejectUntilLeakCatchesUp(t *testing.T) {
 	}
 
 	now = now.Add(time.Second)
+	limiter.drainState(limiter.buckets["client"], now)
 	if !limiter.Allow("client") {
 		t.Fatal("one request should be admitted after one leak interval")
 	}
 	if got := len(limiter.buckets["client"].queue); got != 3 {
 		t.Fatalf("one old request should drain before a new one is enqueued: got %d", got)
 	}
+}
+
+func TestLeakingBucketWorkerDrainsQueueAtFixedRate(t *testing.T) {
+	limiter := NewLeakingBucketLimiter(1, 20*time.Millisecond)
+	t.Cleanup(limiter.Close)
+
+	if !limiter.Allow("client") {
+		t.Fatal("first request should be allowed")
+	}
+	if limiter.Allow("client") {
+		t.Fatal("full queue should reject before worker drains")
+	}
+
+	deadline := time.Now().Add(200 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if limiter.Allow("client") {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	t.Fatal("worker should drain one queued request at a fixed interval")
 }
 
 func TestFixedWindowCounterAllowsBoundaryBurst(t *testing.T) {
